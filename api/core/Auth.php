@@ -255,13 +255,36 @@ class Auth {
     }
     
     private function sendVerificationEmail($email, $token) {
-        // Implement email sending logic
-        // For now, just log it
-        error_log("Verification email would be sent to {$email} with token {$token}");
+        require_once __DIR__ . '/Mailer.php';
+        $mailer = new Mailer();
+        
+        // Get user firstname for personalization
+        $user = $this->db->fetch(
+            "SELECT firstname FROM users WHERE email = ? LIMIT 1",
+            [$email]
+        );
+        
+        $firstname = $user['firstname'] ?? 'User';
+        
+        $sent = $mailer->sendVerificationEmail($email, $token, $firstname);
+        
+        if (!$sent) {
+            error_log("Failed to send verification email to {$email}");
+        }
+        
+        return $sent;
     }
     
     private function sendResetEmail($email, $token, $name) {
-        // Implement email sending logic
-        error_log("Password reset email would be sent to {$email}");
+        require_once __DIR__ . '/Mailer.php';
+        $mailer = new Mailer();
+        
+        $sent = $mailer->sendPasswordResetEmail($email, $token, $name);
+        
+        if (!$sent) {
+            error_log("Failed to send password reset email to {$email}");
+        }
+        
+        return $sent;
     }
 }

@@ -19,8 +19,24 @@ class FinProApp {
         this.setupNetworkListeners();
         this.registerServiceWorker();
         
-        // Check authentication
-        if (this.token) {
+        // Check for password reset token in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const resetToken = urlParams.get('reset-token') || urlParams.get('token');
+        const verifyToken = urlParams.get('verify');
+        
+        if (resetToken) {
+            // Show reset password form with token
+            document.getElementById('reset-token').value = resetToken;
+            this.showAuth();
+            this.toggleAuthForm('reset');
+            
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (verifyToken) {
+            // Auto-verify email
+            this.verifyEmail(verifyToken);
+        } else if (this.token) {
+            // Check authentication
             const valid = await this.validateToken();
             if (valid) {
                 this.showMainApp();
@@ -37,14 +53,34 @@ class FinProApp {
         }, 1000);
     }
     
+    async verifyEmail(token) {
+        try {
+            const result = await this.apiRequest(`/auth/verify-email?token=${token}`, 'GET');
+            if (result.success) {
+                this.showToast('Email verified successfully! You can now sign in.', 'success');
+            }
+        } catch (error) {
+            this.showToast(error.message || 'Email verification failed', 'error');
+        }
+        this.showAuth();
+        this.toggleAuthForm('login');
+    }
+    
     setupEventListeners() {
         // Auth forms
         document.getElementById('login-form').addEventListener('submit', (e) => this.handleLogin(e));
         document.getElementById('register-form').addEventListener('submit', (e) => this.handleRegister(e));
+        document.getElementById('forgot-password-form').addEventListener('submit', (e) => this.handleForgotPassword(e));
+        document.getElementById('reset-password-form').addEventListener('submit', (e) => this.handleResetPassword(e));
         
         // Toggle auth forms
         document.getElementById('show-register').addEventListener('click', () => this.toggleAuthForm('register'));
         document.getElementById('show-login').addEventListener('click', () => this.toggleAuthForm('login'));
+        document.getElementById('show-login-from-forgot').addEventListener('click', () => this.toggleAuthForm('login'));
+        document.querySelector('.forgot-password').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.toggleAuthForm('forgot');
+        });
         
         // Navigation
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -111,6 +147,8 @@ class FinProApp {
     toggleAuthForm(form) {
         document.getElementById('login-form').classList.toggle('hidden', form !== 'login');
         document.getElementById('register-form').classList.toggle('hidden', form !== 'register');
+        document.getElementById('forgot-password-form').classList.toggle('hidden', form !== 'forgot');
+        document.getElementById('reset-password-form').classList.toggle('hidden', form !== 'reset');
     }
     
     async handleLogin(e) {
@@ -162,11 +200,55 @@ class FinProApp {
             const result = await this.apiRequest('/auth/register', 'POST', data);
             
             if (result.success) {
-                this.showToast('Registration successful! Please check your email.', 'success');
+                this.showToast('Registration successful! Please check your email to verify your account.', 'success');
                 this.toggleAuthForm('login');
             }
         } catch (error) {
             this.showToast(error.message || 'Registration failed', 'error');
+        }
+    }
+    
+    async handleForgotPassword(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        try {
+            const result = await this.apiRequest('/auth/forgot-password', 'POST', {
+                email: formData.get('email')
+            });
+            
+            if (result.success) {
+                this.showToast('If an account exists with that email, you will receive reset instructions.', 'success');
+                this.toggleAuthForm('login');
+            }
+        } catch (error) {
+            this.showToast(error.message || 'Failed to send reset email', 'error');
+        }
+    }
+    
+    async handleResetPassword(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const password = formData.get('password');
+        const confirm = formData.get('confirm');
+        
+        if (password !== confirm) {
+            this.showToast('Passwords do not match', 'error');
+            return;
+        }
+        
+        try {
+            const result = await this.apiRequest('/auth/reset-password', 'POST', {
+                token: formData.get('token'),
+                password: password
+            });
+            
+            if (result.success) {
+                this.showToast('Password reset successful! You can now sign in.', 'success');
+                this.toggleAuthForm('login');
+            }
+        } catch (error) {
+            this.showToast(error.message || 'Failed to reset password', 'error');
         }
     }
     
@@ -910,7 +992,27 @@ class FinProApp {
         const result = await response.json();
         
         if (!response.ok) {
-            throw new Error(result.error?.message?.[0] || 'Request failed');
+            // Handle different error formats from backend
+            let errorMessage = 'Request failed';
+            
+            if (result.error) {
+                if (typeof result.error === 'string') {
+                    errorMessage = result.error;
+                } else if (result.error.message) {
+                    // Message can be string or array
+                    if (Array.isArray(result.error.message)) {
+                        errorMessage = result.error.message.join(', ');
+                    } else {
+                        errorMessage = result.error.message;
+                    }
+                }
+            } else if (result.message) {
+                errorMessage = result.message;
+            }
+            
+            const error = new Error(errorMessage);
+            error.response = result;
+            throw error;
         }
         
         return result;

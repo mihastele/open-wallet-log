@@ -33,6 +33,7 @@ require_once __DIR__ . '/core/Validator.php';
 require_once __DIR__ . '/core/Auth.php';
 require_once __DIR__ . '/core/Security.php';
 require_once __DIR__ . '/core/RateLimiter.php';
+require_once __DIR__ . '/core/Mailer.php';
 
 // Load models
 require_once __DIR__ . '/models/User.php';
