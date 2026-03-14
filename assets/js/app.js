@@ -317,8 +317,7 @@ class OpenWalletLogApp {
             'dashboard': 'Dashboard',
             'accounts': 'Accounts',
             'transactions': 'Transactions',
-            'transfers': 'Transfers',
-            'loans': 'Loans',
+            'budget': 'Budget',
             'investments': 'Investments',
             'reports': 'Reports',
             'settings': 'Settings'
@@ -347,11 +346,8 @@ class OpenWalletLogApp {
                 case 'transactions':
                     await this.loadTransactions(container);
                     break;
-                case 'transfers':
-                    await this.loadTransfers(container);
-                    break;
-                case 'loans':
-                    await this.loadLoans(container);
+                case 'budget':
+                    await this.loadBudget(container);
                     break;
                 case 'investments':
                     await this.loadInvestments(container);
@@ -386,7 +382,7 @@ class OpenWalletLogApp {
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-header">
-                            <span class="stat-label">Total Balance</span>
+                            <span class="stat-label">Net Worth</span>
                             <div class="stat-icon primary">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="2" y="5" width="20" height="14" rx="2"/>
@@ -394,7 +390,7 @@ class OpenWalletLogApp {
                                 </svg>
                             </div>
                         </div>
-                        <div class="stat-value">${this.formatCurrency(s.total_balance)}</div>
+                        <div class="stat-value">${this.formatCurrency(s.total_balance + s.portfolio_value)}</div>
                         <div class="stat-change ${s.monthly_change.net >= 0 ? 'positive' : 'negative'}">
                             ${s.monthly_change.net >= 0 ? '↑' : '↓'} ${this.formatCurrency(Math.abs(s.monthly_change.net))} this month
                         </div>
@@ -402,47 +398,42 @@ class OpenWalletLogApp {
                     
                     <div class="stat-card">
                         <div class="stat-header">
-                            <span class="stat-label">Portfolio Value</span>
-                            <div class="stat-icon success">
+                            <span class="stat-label">This Month's Spending</span>
+                            <div class="stat-icon ${s.monthly_change.expenses > s.monthly_change.income * 0.8 ? 'warning' : 'success'}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2v20M2 12h20"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="stat-value">${this.formatCurrency(s.monthly_change.expenses)}</div>
+                        <div class="stat-change">${Math.round((s.monthly_change.expenses / (s.monthly_change.income || 1)) * 100)}% of income</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Monthly Savings</span>
+                            <div class="stat-icon ${s.monthly_change.net >= 0 ? 'success' : 'danger'}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
                                 </svg>
                             </div>
                         </div>
-                        <div class="stat-value">${this.formatCurrency(s.portfolio_value)}</div>
-                        <div class="stat-change positive">Active investments</div>
+                        <div class="stat-value">${this.formatCurrency(Math.max(0, s.monthly_change.net))}</div>
+                        <div class="stat-change">${Math.round((Math.max(0, s.monthly_change.net) / (s.monthly_change.income || 1)) * 100)}% saved this month</div>
                     </div>
                     
                     <div class="stat-card">
                         <div class="stat-header">
-                            <span class="stat-label">Active Loans</span>
-                            <div class="stat-icon warning">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <line x1="12" y1="8" x2="12" y2="12"/>
-                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="stat-value">${s.active_loans}</div>
-                        <div class="stat-change">Loan accounts</div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <span class="stat-label">Monthly Net</span>
-                            <div class="stat-icon ${s.monthly_change.net >= 0 ? 'success' : 'danger'}">
+                            <span class="stat-label">Portfolio Value</span>
+                            <div class="stat-icon success">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
                                     <polyline points="17 6 23 6 23 12"/>
                                 </svg>
                             </div>
                         </div>
-                        <div class="stat-value">${this.formatCurrency(s.monthly_change.net)}</div>
-                        <div class="stat-change">
-                            Income: ${this.formatCurrency(s.monthly_change.income)}<br>
-                            Expenses: ${this.formatCurrency(s.monthly_change.expenses)}
-                        </div>
+                        <div class="stat-value">${this.formatCurrency(s.portfolio_value)}</div>
+                        <div class="stat-change positive">Part of net worth</div>
                     </div>
                 </div>
                 
@@ -453,35 +444,31 @@ class OpenWalletLogApp {
                         </div>
                         <div class="card-body">
                             <div class="quick-actions">
-                                <a href="#transfers" class="quick-action" data-action="transfer">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M17 1l4 4-4 4"/>
-                                        <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-                                        <path d="M7 23l-4-4 4-4"/>
-                                        <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-                                    </svg>
-                                    <span>Transfer</span>
-                                </a>
-                                <a href="#transactions" class="quick-action" data-action="deposit">
+                                <a href="#transactions" class="quick-action" data-action="log-expense">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M12 2v20M2 12h20"/>
                                     </svg>
-                                    <span>Deposit</span>
+                                    <span>Log Expense</span>
                                 </a>
-                                <a href="#accounts" class="quick-action" data-action="new-account">
+                                <a href="#transactions" class="quick-action" data-action="log-income">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2v20M2 12h20"/>
+                                    </svg>
+                                    <span>Log Income</span>
+                                </a>
+                                <a href="#accounts" class="quick-action" data-action="add-account">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                                         <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                                     </svg>
-                                    <span>New Account</span>
+                                    <span>Connect Account</span>
                                 </a>
-                                <a href="#loans" class="quick-action" data-action="apply-loan">
+                                <a href="#reports" class="quick-action" data-action="view-reports">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <line x1="12" y1="8" x2="12" y2="16"/>
-                                        <line x1="8" y1="12" x2="16" y2="12"/>
+                                        <path d="M3 3v18h18"/>
+                                        <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
                                     </svg>
-                                    <span>Apply Loan</span>
+                                    <span>View Reports</span>
                                 </a>
                             </div>
                         </div>
@@ -550,6 +537,9 @@ class OpenWalletLogApp {
                     </div>
                 </div>
             `;
+            
+            // Add Quick Actions event listeners
+            this.setupQuickActions();
         } catch (error) {
             container.innerHTML = `<p class="error">Failed to load dashboard: ${error.message}</p>`;
         }
@@ -567,7 +557,7 @@ class OpenWalletLogApp {
                             <line x1="12" y1="5" x2="12" y2="19"/>
                             <line x1="5" y1="12" x2="19" y2="12"/>
                         </svg>
-                        Open New Account
+                        Connect Account
                     </button>
                 </div>
                 
@@ -578,8 +568,7 @@ class OpenWalletLogApp {
                             <div class="account-number">**** ${acc.account_number.slice(-4)}</div>
                             <div class="account-balance">${this.formatCurrency(acc.balance)}</div>
                             <div class="account-actions">
-                                <button class="btn btn-secondary btn-sm" onclick="app.deposit('${acc.id}')">Deposit</button>
-                                <button class="btn btn-secondary btn-sm" onclick="app.transfer('${acc.id}')">Transfer</button>
+                                <button class="btn btn-secondary btn-sm" onclick="app.viewAccountDetails('${acc.id}')">View Details</button>
                                 <button class="btn btn-icon" onclick="app.viewAccountDetails('${acc.id}')">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -646,6 +635,87 @@ class OpenWalletLogApp {
             `;
         } catch (error) {
             container.innerHTML = `<p class="error">Failed to load transactions: ${error.message}</p>`;
+        }
+    }
+    
+    async loadBudget(container) {
+        try {
+            const result = await this.apiRequest('/reports/spending-by-category', 'GET');
+            const categories = result.data.categories || [];
+            
+            // Default budget categories with limits
+            const budgetCategories = [
+                { name: 'Food & Dining', spent: categories.find(c => c.category === 'food')?.amount || 0, limit: 500 },
+                { name: 'Transportation', spent: categories.find(c => c.category === 'transport')?.amount || 0, limit: 300 },
+                { name: 'Utilities', spent: categories.find(c => c.category === 'utilities')?.amount || 0, limit: 200 },
+                { name: 'Entertainment', spent: categories.find(c => c.category === 'entertainment')?.amount || 0, limit: 150 },
+                { name: 'Shopping', spent: categories.find(c => c.category === 'shopping')?.amount || 0, limit: 400 },
+                { name: 'Health & Medical', spent: categories.find(c => c.category === 'health')?.amount || 0, limit: 200 }
+            ];
+            
+            const totalBudget = budgetCategories.reduce((sum, cat) => sum + cat.limit, 0);
+            const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spent, 0);
+            const percentUsed = Math.round((totalSpent / totalBudget) * 100);
+            
+            container.innerHTML = `
+                <div class="stats-grid mb-4">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Total Budget</span>
+                        </div>
+                        <div class="stat-value">${this.formatCurrency(totalBudget)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Spent This Month</span>
+                        </div>
+                        <div class="stat-value ${percentUsed > 90 ? 'negative' : ''}">${this.formatCurrency(totalSpent)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Remaining</span>
+                        </div>
+                        <div class="stat-value">${this.formatCurrency(Math.max(0, totalBudget - totalSpent))}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Budget Used</span>
+                        </div>
+                        <div class="stat-value ${percentUsed > 90 ? 'negative' : percentUsed > 75 ? 'warning' : 'positive'}">${percentUsed}%</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Spending by Category</h2>
+                    </div>
+                    <div class="card-body">
+                        ${budgetCategories.map(cat => {
+                            const percent = Math.min(100, Math.round((cat.spent / cat.limit) * 100));
+                            const status = percent > 100 ? 'danger' : percent > 75 ? 'warning' : 'success';
+                            return `
+                                <div class="budget-category mb-4">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <span style="font-weight: 500;">${cat.name}</span>
+                                        <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                                            ${this.formatCurrency(cat.spent)} / ${this.formatCurrency(cat.limit)}
+                                        </span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill ${status}" style="width: ${percent}%"></div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                        <span>${percent}% used</span>
+                                        <span>${cat.limit - cat.spent > 0 ? this.formatCurrency(cat.limit - cat.spent) + ' remaining' : 'Over budget!'}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            container.innerHTML = `<p class="error">Failed to load budget: ${error.message}</p>`;
         }
     }
     
@@ -1074,6 +1144,37 @@ class OpenWalletLogApp {
     
     // ==================== UI HELPERS ====================
     
+    setupQuickActions() {
+        document.querySelectorAll('.quick-action[data-action]').forEach(action => {
+            action.addEventListener('click', (e) => {
+                e.preventDefault();
+                const actionType = action.dataset.action;
+                this.handleQuickAction(actionType);
+            });
+        });
+    }
+    
+    handleQuickAction(actionType) {
+        switch (actionType) {
+            case 'log-expense':
+                this.navigate('transactions');
+                setTimeout(() => this.showLogTransactionModal('expense'), 100);
+                break;
+            case 'log-income':
+                this.navigate('transactions');
+                setTimeout(() => this.showLogTransactionModal('income'), 100);
+                break;
+            case 'add-account':
+                this.showCreateAccountModal();
+                break;
+            case 'view-reports':
+                this.navigate('reports');
+                break;
+            default:
+                console.log('Unknown quick action:', actionType);
+        }
+    }
+    
     showToast(message, type = 'info') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -1426,6 +1527,86 @@ class OpenWalletLogApp {
         }
     }
 
+    async showLogTransactionModal(type) {
+        try {
+            const result = await this.apiRequest('/accounts', 'GET');
+            const accounts = result.data.accounts;
+
+            const content = `
+                <form id="log-transaction-form">
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" name="amount" placeholder="0.00" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" name="description" placeholder="e.g., Grocery shopping, Salary, etc." required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Account</label>
+                            <select name="account_id" class="form-select" required>
+                                ${accounts.map(acc => `<option value="${acc.id}">${acc.type} - ****${acc.account_number.slice(-4)}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select name="category" class="form-select" required>
+                                ${type === 'expense' ? `
+                                    <option value="food">Food & Dining</option>
+                                    <option value="transport">Transportation</option>
+                                    <option value="utilities">Utilities</option>
+                                    <option value="entertainment">Entertainment</option>
+                                    <option value="shopping">Shopping</option>
+                                    <option value="health">Health & Medical</option>
+                                    <option value="other">Other</option>
+                                ` : `
+                                    <option value="salary">Salary</option>
+                                    <option value="freelance">Freelance</option>
+                                    <option value="investment">Investment</option>
+                                    <option value="gift">Gift</option>
+                                    <option value="other">Other</option>
+                                `}
+                            </select>
+                        </div>
+                    </div>
+                    <input type="hidden" name="type" value="${type}">
+                </form>
+            `;
+
+            const footer = `
+                <button class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.submitLogTransaction()">Log ${type.charAt(0).toUpperCase() + type.slice(1)}</button>
+            `;
+
+            this.openModal(`Log ${type.charAt(0).toUpperCase() + type.slice(1)}`, content, footer);
+        } catch (error) {
+            this.showToast('Failed to load accounts', 'error');
+        }
+    }
+
+    async submitLogTransaction() {
+        const form = document.getElementById('log-transaction-form');
+        const formData = new FormData(form);
+
+        try {
+            const type = formData.get('type');
+            await this.apiRequest('/transactions', 'POST', {
+                account_id: formData.get('account_id'),
+                type: type,
+                amount: parseFloat(formData.get('amount')),
+                description: formData.get('description'),
+                category: formData.get('category')
+            });
+
+            this.closeModal();
+            this.showToast(`${type} logged successfully`, 'success');
+            this.loadPage('transactions');
+        } catch (error) {
+            this.showToast(error.message || 'Failed to log transaction', 'error');
+        }
+    }
+
     // ==================== ACTION METHODS ====================
 
     async deposit(accountId) {
@@ -1583,7 +1764,6 @@ class OpenWalletLogApp {
 
             const footer = `
                 <button class="btn btn-secondary" onclick="app.closeModal()">Close</button>
-                <button class="btn btn-primary" onclick="app.deposit('${accountId}')">Deposit</button>
             `;
 
             this.openModal('Account Details', content, footer);
