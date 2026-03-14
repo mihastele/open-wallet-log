@@ -116,7 +116,7 @@ class Mailer {
      * Send verification email
      */
     public function sendVerificationEmail($email, $token, $firstname) {
-        $verifyUrl = (APP_URL ?? 'http://localhost') . '/verify-email?token=' . $token;
+        $verifyUrl = (APP_URL ?? 'http://localhost') . '/?verify=' . $token;
         
         $subject = 'Verify Your Email Address';
         $body = $this->getTemplate('verification', [
@@ -132,7 +132,7 @@ class Mailer {
      * Send password reset email
      */
     public function sendPasswordResetEmail($email, $token, $firstname) {
-        $resetUrl = (APP_URL ?? 'http://localhost') . '/reset-password?token=' . $token;
+        $resetUrl = (APP_URL ?? 'http://localhost') . '/?reset-token=' . $token;
         
         $subject = 'Reset Your Password';
         $body = $this->getTemplate('password-reset', [

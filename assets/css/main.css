@@ -254,6 +254,13 @@ body {
   margin-top: var(--space-xs);
 }
 
+.form-description {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+  line-height: 1.5;
+}
+
 .form-options {
   display: flex;
   justify-content: space-between;

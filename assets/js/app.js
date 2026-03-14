@@ -999,15 +999,33 @@ class FinProApp {
                 if (typeof result.error === 'string') {
                     errorMessage = result.error;
                 } else if (result.error.message) {
-                    // Message can be string or array
+                    // Message can be string, array, or object
                     if (Array.isArray(result.error.message)) {
                         errorMessage = result.error.message.join(', ');
+                    } else if (typeof result.error.message === 'object') {
+                        // Handle field-specific errors like {email: ["Invalid"], phone: ["Required"]}
+                        const messages = [];
+                        for (const [field, errs] of Object.entries(result.error.message)) {
+                            if (Array.isArray(errs)) {
+                                messages.push(`${field}: ${errs.join(', ')}`);
+                            } else {
+                                messages.push(`${field}: ${errs}`);
+                            }
+                        }
+                        errorMessage = messages.join('; ');
                     } else {
-                        errorMessage = result.error.message;
+                        errorMessage = String(result.error.message);
                     }
+                } else {
+                    // error is an object without message - try to stringify
+                    errorMessage = JSON.stringify(result.error);
                 }
             } else if (result.message) {
-                errorMessage = result.message;
+                if (typeof result.message === 'object') {
+                    errorMessage = JSON.stringify(result.message);
+                } else {
+                    errorMessage = String(result.message);
+                }
             }
             
             const error = new Error(errorMessage);
