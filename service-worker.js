@@ -44,11 +44,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   
+  // Skip non-http schemes (chrome-extension, etc.)
+  const url = new URL(request.url);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+  
   // API requests - network first, then cache
   if (request.url.includes('/api/')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
+          if (!response || response.status !== 200) {
+            return response;
+          }
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(request, clone);
@@ -69,11 +78,16 @@ self.addEventListener('fetch', (event) => {
         return cached;
       }
       return fetch(request).then((response) => {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
         const clone = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(request, clone);
         });
         return response;
+      }).catch(() => {
+        return new Response('Network error', { status: 408 });
       });
     })
   );

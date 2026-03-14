@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generate Icons - Open Wallet Log</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    
+    h1 {
+      color: #0f172a;
+      margin-bottom: 16px;
+      font-size: 1.75rem;
+    }
+    
+    p {
+      color: #64748b;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    
+    .icon-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 32px;
+      padding: 24px;
+      background: #f8fafc;
+      border-radius: 12px;
+    }
+    
+    .icon-preview img {
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .icon-small { width: 48px; height: 48px; }
+    .icon-medium { width: 96px; height: 96px; }
+    .icon-large { width: 192px; height: 192px; }
+    
+    button {
+      width: 100%;
+      padding: 16px 24px;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px -10px rgba(59, 130, 246, 0.5);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .status {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      display: none;
+    }
+    
+    .status.success {
+      display: block;
+      background: #dcfce7;
+      color: #166534;
+    }
+    
+    .status.error {
+      display: block;
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    
+    .status.info {
+      display: block;
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    
+    .instructions {
+      margin-top: 32px;
+      padding: 20px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #475569;
+    }
+    
+    .instructions h3 {
+      margin-bottom: 12px;
+      color: #0f172a;
+    }
+    
+    .instructions ol {
+      margin-left: 20px;
+    }
+    
+    .instructions li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    
+    code {
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Icon Generator</h1>
+    <p>This tool generates PNG icons in all required sizes from the SVG source file. The icons are needed for the PWA manifest and app installation.</p>
+    
+    <div class="icon-preview">
+      <img src="icon.svg" alt="48px" class="icon-small">
+      <img src="icon.svg" alt="96px" class="icon-medium">
+      <img src="icon.svg" alt="192px" class="icon-large">
+    </div>
+    
+    <button id="generateBtn">Generate All Icons</button>
+    <div id="status" class="status"></div>
+    
+    <div class="instructions">
+      <h3>How to use:</h3>
+      <ol>
+        <li>Click "Generate All Icons" above</li>
+        <li>The browser will download 8 PNG files (72x72 through 512x512)</li>
+        <li>Move the downloaded files to <code>assets/icons/</code> folder</li>
+        <li>Refresh your app to see the new icons</li>
+      </ol>
+      <p style="margin-top: 12px;"><strong>Note:</strong> If automatic download doesn't work, right-click each preview size and select "Save image as..."</p>
+    </div>
+  </div>
+
+  <script>
+    const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+    
+    function showStatus(message, type = 'info') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status ${type}`;
+    }
+    
+    async function generateIcon(size) {
+      return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, size, size);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `icon-${size}x${size}.png`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+              resolve();
+            } else {
+              reject(new Error(`Failed to create blob for ${size}x${size}`));
+            }
+          }, 'image/png');
+        };
+        
+        img.onerror = () => reject(new Error(`Failed to load SVG for ${size}x${size}`));
+        img.src = 'icon.svg';
+      });
+    }
+    
+    document.getElementById('generateBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+      
+      showStatus('Generating icons...', 'info');
+      
+      try {
+        for (let i = 0; i < iconSizes.length; i++) {
+          const size = iconSizes[i];
+          showStatus(`Generating icon ${size}x${size} (${i + 1}/${iconSizes.length})...`, 'info');
+          await generateIcon(size);
+          await new Promise(resolve => setTimeout(resolve, 100)); // Small delay between downloads
+        }
+        
+        showStatus('All icons generated and downloaded! Move them to assets/icons/ folder.', 'success');
+      } catch (error) {
+        showStatus(`Error: ${error.message}. Try right-clicking the preview images and saving manually.`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Generate All Icons';
+      }
+    });
+  </script>
+</body>
+</html>
