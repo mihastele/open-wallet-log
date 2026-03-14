@@ -67,11 +67,12 @@ class Account {
             $accountNumber = $this->generateAccountNumber();
             
             $accountId = $this->db->insert(
-                "INSERT INTO accounts (user_id, account_number, type, currency, balance, status, created_at) 
-                 VALUES (?, ?, ?, ?, ?, 'active', NOW())",
+                "INSERT INTO accounts (user_id, account_number, name, type, currency, balance, status, created_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, 'active', NOW())",
                 [
                     $data['user_id'],
                     $accountNumber,
+                    $data['name'] ?? null,
                     $data['type'],
                     $data['currency'],
                     $data['initial_deposit'] ?? 0

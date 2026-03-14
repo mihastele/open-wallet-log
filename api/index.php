@@ -348,6 +348,7 @@ function handleCreateAccount($data) {
     $validator->required('type')->inArray('type', ['checking', 'savings', 'investment']);
     $validator->required('currency')->inArray('currency', ['USD', 'EUR', 'GBP']);
     $validator->optional('initial_deposit')->numeric('initial_deposit');
+    $validator->optional('name')->minLength('name', 2);
     
     if (!$validator->isValid()) {
         Response::error($validator->getErrors(), 400);
@@ -358,7 +359,8 @@ function handleCreateAccount($data) {
         'user_id' => $user['id'],
         'type' => $data['type'],
         'currency' => $data['currency'],
-        'initial_deposit' => $data['initial_deposit'] ?? 0
+        'initial_deposit' => $data['initial_deposit'] ?? 0,
+        'name' => $data['name'] ?? null
     ]);
     
     if ($result['success']) {

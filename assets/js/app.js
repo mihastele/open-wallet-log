@@ -489,8 +489,8 @@ class OpenWalletLogApp {
                                         </svg>
                                     </div>
                                     <div class="investment-details">
-                                        <div class="investment-name">${acc.type.charAt(0).toUpperCase() + acc.type.slice(1)} Account</div>
-                                        <div class="investment-symbol">****${acc.account_number.slice(-4)}</div>
+                                        <div class="investment-name">${acc.name || acc.type.charAt(0).toUpperCase() + acc.type.slice(1)}</div>
+                                        <div class="investment-symbol">${acc.type.toUpperCase()}</div>
                                     </div>
                                     <div class="investment-price">
                                         <div class="investment-value">${this.formatCurrency(acc.balance)}</div>
@@ -564,17 +564,11 @@ class OpenWalletLogApp {
                 <div class="account-grid">
                     ${accounts.map(acc => `
                         <div class="account-card ${acc.type}">
+                            <div class="account-name">${acc.name || acc.type.charAt(0).toUpperCase() + acc.type.slice(1)}</div>
                             <div class="account-type">${acc.type.toUpperCase()}</div>
-                            <div class="account-number">**** ${acc.account_number.slice(-4)}</div>
                             <div class="account-balance">${this.formatCurrency(acc.balance)}</div>
                             <div class="account-actions">
                                 <button class="btn btn-secondary btn-sm" onclick="app.viewAccountDetails('${acc.id}')">View Details</button>
-                                <button class="btn btn-icon" onclick="app.viewAccountDetails('${acc.id}')">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                        <circle cx="12" cy="12" r="3"/>
-                                    </svg>
-                                </button>
                             </div>
                         </div>
                     `).join('')}
@@ -1305,6 +1299,10 @@ class OpenWalletLogApp {
         const content = `
             <form id="create-account-form">
                 <div class="form-group">
+                    <label>Account Name</label>
+                    <input type="text" name="name" placeholder="e.g., My Checking, Main Savings" required>
+                </div>
+                <div class="form-group">
                     <label>Account Type</label>
                     <select name="type" class="form-select" required>
                         <option value="">Select account type</option>
@@ -1322,7 +1320,7 @@ class OpenWalletLogApp {
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Initial Deposit (Optional)</label>
+                    <label>Starting Balance (Optional)</label>
                     <input type="number" name="initial_deposit" placeholder="0.00" min="0" step="0.01">
                 </div>
             </form>
@@ -1330,10 +1328,10 @@ class OpenWalletLogApp {
 
         const footer = `
             <button class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="app.submitCreateAccount()">Create Account</button>
+            <button class="btn btn-primary" onclick="app.submitCreateAccount()">Connect Account</button>
         `;
 
-        this.openModal('Open New Account', content, footer);
+        this.openModal('Connect Account', content, footer);
     }
 
     async submitCreateAccount() {
@@ -1342,16 +1340,17 @@ class OpenWalletLogApp {
 
         try {
             await this.apiRequest('/accounts/create', 'POST', {
+                name: formData.get('name'),
                 type: formData.get('type'),
                 currency: formData.get('currency'),
                 initial_deposit: parseFloat(formData.get('initial_deposit')) || 0
             });
 
             this.closeModal();
-            this.showToast('Account created successfully', 'success');
+            this.showToast('Account connected successfully', 'success');
             this.loadPage('accounts');
         } catch (error) {
-            this.showToast(error.message || 'Failed to create account', 'error');
+            this.showToast(error.message || 'Failed to connect account', 'error');
         }
     }
 
@@ -1591,9 +1590,9 @@ class OpenWalletLogApp {
 
         try {
             const type = formData.get('type');
-            await this.apiRequest('/transactions', 'POST', {
+            await this.apiRequest('/transactions/create', 'POST', {
                 account_id: formData.get('account_id'),
-                type: type,
+                type: type === 'income' ? 'deposit' : 'withdrawal',
                 amount: parseFloat(formData.get('amount')),
                 description: formData.get('description'),
                 category: formData.get('category')
@@ -1719,10 +1718,6 @@ class OpenWalletLogApp {
             const content = `
                 <div class="account-details">
                     <div class="detail-row">
-                        <span class="detail-label">Account Number</span>
-                        <span class="detail-value">${account.account_number}</span>
-                    </div>
-                    <div class="detail-row">
                         <span class="detail-label">Type</span>
                         <span class="detail-value">${account.type.charAt(0).toUpperCase() + account.type.slice(1)}</span>
                     </div>
@@ -1740,7 +1735,7 @@ class OpenWalletLogApp {
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Opened</span>
-                        <span class="detail-value">${this.formatDate(account.opened_at)}</span>
+                        <span class="detail-value">${this.formatDate(account.opened_at || account.created_at)}</span>
                     </div>
                     
                     <h4 style="margin-top: 1.5rem; margin-bottom: 1rem;">Recent Transactions</h4>

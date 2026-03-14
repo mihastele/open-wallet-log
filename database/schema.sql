@@ -46,6 +46,7 @@ CREATE TABLE accounts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     account_number VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(100),
     type ENUM('checking', 'savings', 'investment', 'credit') NOT NULL,
     currency ENUM('USD', 'EUR', 'GBP') DEFAULT 'USD',
     balance DECIMAL(15,2) DEFAULT 0.00,
