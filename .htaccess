@@ -1,0 +1,110 @@
+# Enterprise Finance Pro - Apache Configuration
+# Place this file in the root directory
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Redirect to HTTPS (uncomment in production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+# API Routing - Redirect all /api/* requests to api/index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+
+# Frontend routing - Let the PWA handle client-side routing
+# If the request is not for a file or directory, serve index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [QSA,L]
+
+# Security Headers
+<IfModule mod_headers.c>
+    # Prevent clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # XSS Protection
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Prevent MIME type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Feature Policy
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    
+    # Remove server info
+    Header always unset X-Powered-By
+    Header always unset Server
+</IfModule>
+
+# Enable compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE application/xml application/xhtml+xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# Caching for static assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Images
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    
+    # CSS and JavaScript
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    
+    # Fonts
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+</IfModule>
+
+# Protect sensitive files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "(\.sql|\.log|\.ini|\.env)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Disable directory browsing
+Options -Indexes
+
+# Set default character set
+AddDefaultCharset UTF-8
+
+# PHP settings (if using mod_php)
+<IfModule mod_php.c>
+    php_flag display_errors off
+    php_flag log_errors on
+    php_value memory_limit 256M
+    php_value post_max_size 20M
+    php_value upload_max_filesize 10M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value session.cookie_httponly 1
+    php_value session.cookie_secure 1
+    php_value session.use_only_cookies 1
+</IfModule>
+
+# Allow CORS for API
+<IfModule mod_headers.c>
+    <FilesMatch "api/index.php$">
+        Header set Access-Control-Allow-Origin "*"
+        Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-CSRF-Token"
+    </FilesMatch>
+</IfModule>
