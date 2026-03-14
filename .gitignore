@@ -1,0 +1,30 @@
+# Ignore all environment files except the example
+.env
+.env.*
+!.env.example
+
+# Composer dependencies
+/vendor/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Cache
+*.cache
+cache/
+temp/
+
+# Session files
+*.sess

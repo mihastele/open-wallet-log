@@ -399,3 +399,6 @@ For issues and feature requests, please create an issue in the repository.
 ---
 
 **Built with**: PHP 7.4+, MySQL, Vanilla JavaScript, Chart.js
+
+
+  docker compose -f docker-compose.dev.yml up -d

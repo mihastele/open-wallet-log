@@ -1,0 +1,82 @@
+version: '3.8'
+
+# Development Docker Compose with Mailpit for email testing
+# Usage: docker compose -f docker-compose.dev.yml up -d
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/vendor
+    depends_on:
+      - db
+      - mailpit
+    environment:
+      - DB_HOST=db
+      - DB_NAME=finpro
+      - DB_USER=finpro
+      - DB_PASS=finpro123
+      - APP_ENV=development
+      - JWT_SECRET=dev-secret-key-do-not-use-in-production
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_FROM=noreply@openwalletlog.local
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: finpro
+      MYSQL_USER: finpro
+      MYSQL_PASSWORD: finpro123
+    volumes:
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+      PMA_ARBITRARY: 1
+    depends_on:
+      - db
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Mailpit - Email testing tool
+  # Web UI: http://localhost:8025
+  # SMTP: mailpit:1025
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP
+    volumes:
+      - mailpit_data:/data
+    environment:
+      - MP_MAX_MESSAGES=5000
+      - MP_DATA_FILE=/data/mailpit.db
+      - MP_UI_BIND_ADDRESS=0.0.0.0:8025
+      - MP_SMTP_BIND_ADDRESS=0.0.0.0:1025
+
+volumes:
+  mysql_data:
+  redis_data:
+  mailpit_data:
