@@ -1,6 +1,6 @@
-# Enterprise Finance Pro - Future Features
+# Open Wallet Log - Future Features
 
-This document outlines potential features that can be implemented in future versions of Enterprise Finance Pro.
+This document outlines potential features that can be implemented in future versions of Open Wallet Log.
 
 ## Priority Tiers
 
