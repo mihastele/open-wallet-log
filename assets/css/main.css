@@ -138,6 +138,11 @@ body {
   50% { opacity: 0.5; }
 }
 
+/* Utility Classes */
+.hidden {
+  display: none !important;
+}
+
 /* Offline Indicator */
 .offline-indicator {
   position: fixed;
