@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/vendor
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=finpro
+      - DB_USER=finpro
+      - DB_PASS=finpro123
+      - APP_ENV=production
+      - JWT_SECRET=your-secret-key-change-in-production
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: finpro
+      MYSQL_USER: finpro
+      MYSQL_PASSWORD: finpro123
+    volumes:
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+      PMA_ARBITRARY: 1
+    depends_on:
+      - db
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    # Optional: Enable for caching and session storage
+    # command: redis-server --appendonly yes
+
+volumes:
+  mysql_data:
+  redis_data:

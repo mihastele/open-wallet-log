@@ -1,6 +1,6 @@
 <?php
 /**
- * Enterprise Finance Pro - Configuration
+ * Open Wallet Log - Configuration
  */
 
 // Database configuration
@@ -14,7 +14,7 @@ if (!defined('DB_HOST')) {
 
 // Application configuration
 if (!defined('APP_NAME')) {
-    define('APP_NAME', 'Enterprise Finance Pro');
+    define('APP_NAME', 'Open Wallet Log');
     define('APP_VERSION', '1.0.0');
     define('APP_ENV', $_ENV['APP_ENV'] ?? 'development');
     define('APP_DEBUG', ($_ENV['APP_DEBUG'] ?? 'true') === 'true');

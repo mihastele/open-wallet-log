@@ -1,5 +1,5 @@
 /* ==========================================
-   Enterprise Finance Pro - Main Styles
+   Open Wallet Log - Main Styles
    Modern Dark Theme with Enterprise Features
    ========================================== */
 
@@ -1324,8 +1324,168 @@ body {
   }
 }
 
-/* Utility Classes */
-.hidden { display: none !important; }
+/* Notifications */
+.notifications-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+    position: relative;
+}
+
+.notification-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.notification-item.unread {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.notification-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.notification-icon.transaction { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+.notification-icon.alert { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+.notification-icon.loan { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
+.notification-icon.investment { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+.notification-icon.security { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+.notification-icon.system { background: rgba(100, 116, 139, 0.1); color: var(--text-secondary); }
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-title {
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+    color: var(--text-primary);
+}
+
+.notification-message {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-xs);
+}
+
+.notification-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.unread-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: var(--space-sm);
+}
+
+/* Stock List */
+.stock-list {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-md);
+}
+
+.stock-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md);
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: background var(--transition-fast);
+}
+
+.stock-option:last-child {
+    border-bottom: none;
+}
+
+.stock-option:hover {
+    background: var(--bg-tertiary);
+}
+
+.stock-option.selected {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 3px solid var(--primary);
+}
+
+.stock-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.stock-info strong {
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.stock-info span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.stock-price {
+    font-weight: 600;
+    color: var(--success);
+}
+
+/* Account Details */
+.account-details {
+    padding: var(--space-md);
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.detail-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Text utilities */
+.text-muted {
+    color: var(--text-muted);
+}
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 .mb-0 { margin-bottom: 0; }

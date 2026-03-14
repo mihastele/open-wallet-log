@@ -1,6 +1,6 @@
 <?php
 /**
- * Enterprise Finance Pro - API Router
+ * Open Wallet Log - API Router
  * Main entry point for all API requests
  */
 

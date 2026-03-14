@@ -1,4 +1,4 @@
--- Enterprise Finance Pro - Database Schema
+-- Open Wallet Log - Database Schema
 -- Run this SQL to set up the complete database structure
 
 -- Create database

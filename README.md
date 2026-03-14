@@ -1,4 +1,4 @@
-# Enterprise Finance Pro - Setup Instructions
+# Open Wallet Log - Setup Instructions
 
 A comprehensive, enterprise-featured Progressive Web App (PWA) for financial management built with plain PHP backend and modern JavaScript frontend.
 
@@ -113,16 +113,106 @@ Default admin credentials:
 
 While the app works without Composer, you can add it for additional features:
 
+### Installing Composer
+
+**Linux/Mac:**
 ```bash
-# Install Composer if not already installed
-# Linux/Mac
+# Install Composer
 curl -sS https://getcomposer.org/installer | php
 sudo mv composer.phar /usr/local/bin/composer
 
-# Windows: Download from https://getcomposer.org/download/
+# Verify installation
+composer --version
+```
 
-# Install dependencies (if composer.json exists)
+**Windows:**
+1. Download the installer from https://getcomposer.org/download/
+2. Run the installer and follow the prompts
+3. Add Composer to your system PATH
+4. Verify: `composer --version`
+
+### Installing Dependencies
+
+```bash
+# Navigate to your project directory
+cd /var/www/html  # or your web root
+
+# Install dependencies
 composer install
+
+# For production, use:
+composer install --no-dev --optimize-autoloader
+```
+
+### Setting Up for Apache (Static Server)
+
+When deploying to Apache, you have two options:
+
+**Option 1: Without Composer (Recommended for shared hosting)**
+The app is fully functional without Composer. Just upload all files to your Apache server:
+```bash
+# Upload all files to your web root
+# No additional steps needed - the app uses plain PHP
+```
+
+**Option 2: With Composer (For VPS/Dedicated servers)**
+
+1. Upload all files including the `vendor` folder after running `composer install`
+2. Ensure your Apache configuration allows `.htaccess` files:
+
+```apache
+<Directory /var/www/html>
+    Options -Indexes +FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+```
+
+3. Set proper permissions:
+```bash
+sudo chown -R www-data:www-data /var/www/html
+sudo chmod -R 755 /var/www/html
+sudo chmod -R 775 /var/www/html/vendor  # If using Composer
+```
+
+### Available Optional Packages
+
+To add optional packages for enhanced functionality:
+
+```bash
+# Email notifications (recommended for production)
+composer require phpmailer/phpmailer
+
+# Environment variable management
+composer require vlucas/phpdotenv
+
+# Enhanced JWT handling
+composer require firebase/php-jwt
+
+# Advanced logging
+composer require monolog/monolog
+
+# UUID generation
+composer require ramsey/uuid
+```
+
+### Development Tools
+
+```bash
+# Install dev dependencies
+composer install --dev
+
+# Run code style checks
+composer cs-check
+
+# Fix code style issues
+composer cs-fix
+
+# Run static analysis
+composer analyze
+
+# Run tests
+composer test
 ```
 
 ## Apache Virtual Host Configuration (Production)

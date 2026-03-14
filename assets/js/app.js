@@ -1,5 +1,5 @@
 /**
- * Enterprise Finance Pro - Main Application
+ * Open Wallet Log - Main Application
  * PWA with comprehensive financial management features
  */
 
@@ -1013,6 +1013,764 @@ class FinProApp {
     
     getAmountPrefix(type) {
         return (type === 'deposit' || type === 'transfer_in') ? '+' : '-';
+    }
+
+    // ==================== MODAL METHODS ====================
+
+    async showNotifications() {
+        try {
+            const result = await this.apiRequest('/notifications', 'GET');
+            const notifications = result.data.notifications;
+            const unreadCount = result.data.unread_count;
+
+            const content = notifications.length > 0 ? `
+                <div class="notifications-list">
+                    ${notifications.map(n => `
+                        <div class="notification-item ${n.is_read ? 'read' : 'unread'}" data-id="${n.id}">
+                            <div class="notification-icon ${n.type}">
+                                ${this.getNotificationIcon(n.type)}
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">${n.title}</div>
+                                <div class="notification-message">${n.message}</div>
+                                <div class="notification-time">${this.formatDate(n.created_at)}</div>
+                            </div>
+                            ${!n.is_read ? '<span class="unread-dot"></span>' : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '<p class="text-center text-muted">No notifications</p>';
+
+            const footer = unreadCount > 0 ? `
+                <button class="btn btn-secondary" id="mark-all-read">Mark All Read</button>
+            ` : '';
+
+            this.openModal(`Notifications (${unreadCount} unread)`, content, footer);
+
+            // Add click handlers for notifications
+            document.querySelectorAll('.notification-item.unread').forEach(item => {
+                item.addEventListener('click', async () => {
+                    await this.apiRequest('/notifications/mark-read', 'POST', { notification_id: item.dataset.id });
+                    item.classList.remove('unread');
+                    item.querySelector('.unread-dot')?.remove();
+                });
+            });
+
+            document.getElementById('mark-all-read')?.addEventListener('click', async () => {
+                await this.apiRequest('/notifications/mark-read', 'POST', { mark_all: true });
+                document.querySelectorAll('.notification-item').forEach(item => {
+                    item.classList.remove('unread');
+                    item.querySelector('.unread-dot')?.remove();
+                });
+            });
+        } catch (error) {
+            this.showToast('Failed to load notifications', 'error');
+        }
+    }
+
+    getNotificationIcon(type) {
+        const icons = {
+            transaction: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+            alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+            loan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+            investment: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+            security: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+            system: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
+        };
+        return icons[type] || icons.system;
+    }
+
+    async showCreateAccountModal() {
+        const content = `
+            <form id="create-account-form">
+                <div class="form-group">
+                    <label>Account Type</label>
+                    <select name="type" class="form-select" required>
+                        <option value="">Select account type</option>
+                        <option value="checking">Checking Account</option>
+                        <option value="savings">Savings Account</option>
+                        <option value="investment">Investment Account</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Currency</label>
+                    <select name="currency" class="form-select" required>
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Initial Deposit (Optional)</label>
+                    <input type="number" name="initial_deposit" placeholder="0.00" min="0" step="0.01">
+                </div>
+            </form>
+        `;
+
+        const footer = `
+            <button class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="app.submitCreateAccount()">Create Account</button>
+        `;
+
+        this.openModal('Open New Account', content, footer);
+    }
+
+    async submitCreateAccount() {
+        const form = document.getElementById('create-account-form');
+        const formData = new FormData(form);
+
+        try {
+            await this.apiRequest('/accounts/create', 'POST', {
+                type: formData.get('type'),
+                currency: formData.get('currency'),
+                initial_deposit: parseFloat(formData.get('initial_deposit')) || 0
+            });
+
+            this.closeModal();
+            this.showToast('Account created successfully', 'success');
+            this.loadPage('accounts');
+        } catch (error) {
+            this.showToast(error.message || 'Failed to create account', 'error');
+        }
+    }
+
+    async showApplyLoanModal() {
+        const content = `
+            <form id="apply-loan-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Loan Type</label>
+                        <select name="type" class="form-select" required>
+                            <option value="personal">Personal Loan</option>
+                            <option value="business">Business Loan</option>
+                            <option value="mortgage">Mortgage</option>
+                            <option value="auto">Auto Loan</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" name="amount" placeholder="0.00" min="1000" step="100" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Term (Months)</label>
+                        <select name="term_months" class="form-select" required>
+                            <option value="12">12 months</option>
+                            <option value="24">24 months</option>
+                            <option value="36">36 months</option>
+                            <option value="48">48 months</option>
+                            <option value="60">60 months</option>
+                            <option value="120">120 months</option>
+                            <option value="180">180 months</option>
+                            <option value="360">360 months</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Annual Income</label>
+                        <input type="number" name="income" placeholder="0.00" min="0" step="1000">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Purpose</label>
+                    <textarea name="purpose" class="form-textarea" placeholder="What is the purpose of this loan?" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Employment Status</label>
+                    <select name="employment_status" class="form-select">
+                        <option value="">Select status</option>
+                        <option value="employed">Employed</option>
+                        <option value="self_employed">Self Employed</option>
+                        <option value="business_owner">Business Owner</option>
+                        <option value="retired">Retired</option>
+                    </select>
+                </div>
+            </form>
+        `;
+
+        const footer = `
+            <button class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="app.submitLoanApplication()">Apply Now</button>
+        `;
+
+        this.openModal('Apply for Loan', content, footer);
+    }
+
+    async submitLoanApplication() {
+        const form = document.getElementById('apply-loan-form');
+        const formData = new FormData(form);
+
+        try {
+            await this.apiRequest('/loans/apply', 'POST', {
+                type: formData.get('type'),
+                amount: parseFloat(formData.get('amount')),
+                term_months: parseInt(formData.get('term_months')),
+                purpose: formData.get('purpose'),
+                income: parseFloat(formData.get('income')) || null,
+                employment_status: formData.get('employment_status') || null
+            });
+
+            this.closeModal();
+            this.showToast('Loan application submitted', 'success');
+            this.loadPage('loans');
+        } catch (error) {
+            this.showToast(error.message || 'Failed to submit application', 'error');
+        }
+    }
+
+    async showBuyStockModal() {
+        try {
+            const pricesResult = await this.apiRequest('/investments/prices?symbols=AAPL,GOOGL,MSFT,AMZN,TSLA,META,NVDA,JPM', 'GET');
+            const prices = pricesResult.data.prices;
+
+            const accountsResult = await this.apiRequest('/accounts', 'GET');
+            const accounts = accountsResult.data.accounts.filter(a => a.type !== 'credit');
+
+            const content = `
+                <form id="buy-stock-form">
+                    <div class="form-group">
+                        <label>Select Stock</label>
+                        <div class="stock-list">
+                            ${prices.map(stock => `
+                                <div class="stock-option" data-symbol="${stock.symbol}" data-price="${stock.current_price}">
+                                    <div class="stock-info">
+                                        <strong>${stock.symbol}</strong>
+                                        <span>${stock.name}</span>
+                                    </div>
+                                    <div class="stock-price">${this.formatCurrency(stock.current_price)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <input type="hidden" name="symbol" id="selected-symbol" required>
+                        <input type="hidden" name="price" id="selected-price">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="number" name="quantity" placeholder="0" min="1" step="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>From Account</label>
+                            <select name="account_id" class="form-select" required>
+                                ${accounts.map(acc => `<option value="${acc.id}">${acc.type} - ${this.formatCurrency(acc.balance)}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            `;
+
+            const footer = `
+                <button class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.submitBuyStock()">Buy Stock</button>
+            `;
+
+            this.openModal('Buy Stock', content, footer);
+
+            // Add stock selection handler
+            document.querySelectorAll('.stock-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    document.querySelectorAll('.stock-option').forEach(o => o.classList.remove('selected'));
+                    option.classList.add('selected');
+                    document.getElementById('selected-symbol').value = option.dataset.symbol;
+                    document.getElementById('selected-price').value = option.dataset.price;
+                });
+            });
+        } catch (error) {
+            this.showToast('Failed to load stock data', 'error');
+        }
+    }
+
+    async submitBuyStock() {
+        const form = document.getElementById('buy-stock-form');
+        const formData = new FormData(form);
+
+        const symbol = formData.get('symbol');
+        if (!symbol) {
+            this.showToast('Please select a stock', 'error');
+            return;
+        }
+
+        try {
+            await this.apiRequest('/investments/buy', 'POST', {
+                symbol: symbol,
+                quantity: parseFloat(formData.get('quantity')),
+                account_id: formData.get('account_id'),
+                price: parseFloat(document.getElementById('selected-price').value)
+            });
+
+            this.closeModal();
+            this.showToast('Stock purchased successfully', 'success');
+            this.loadPage('investments');
+        } catch (error) {
+            this.showToast(error.message || 'Failed to buy stock', 'error');
+        }
+    }
+
+    // ==================== ACTION METHODS ====================
+
+    async deposit(accountId) {
+        const content = `
+            <form id="deposit-form">
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" name="amount" placeholder="0.00" min="0.01" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Description (Optional)</label>
+                    <input type="text" name="description" placeholder="e.g., Cash deposit">
+                </div>
+                <input type="hidden" name="account_id" value="${accountId}">
+            </form>
+        `;
+
+        const footer = `
+            <button class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+            <button class="btn btn-success" onclick="app.submitDeposit()">Deposit</button>
+        `;
+
+        this.openModal('Make Deposit', content, footer);
+    }
+
+    async submitDeposit() {
+        const form = document.getElementById('deposit-form');
+        const formData = new FormData(form);
+
+        try {
+            await this.apiRequest('/transactions/deposit', 'POST', {
+                account_id: formData.get('account_id'),
+                amount: parseFloat(formData.get('amount')),
+                description: formData.get('description') || 'Deposit'
+            });
+
+            this.closeModal();
+            this.showToast('Deposit successful', 'success');
+            this.loadPage('accounts');
+        } catch (error) {
+            this.showToast(error.message || 'Deposit failed', 'error');
+        }
+    }
+
+    async transfer(fromAccountId) {
+        try {
+            const result = await this.apiRequest('/accounts', 'GET');
+            const accounts = result.data.accounts.filter(a => a.id != fromAccountId);
+
+            const content = `
+                <form id="transfer-modal-form">
+                    <div class="form-group">
+                        <label>To Account</label>
+                        <select name="to_account_id" class="form-select" required>
+                            ${accounts.map(acc => `<option value="${acc.id}">${acc.type} - ****${acc.account_number.slice(-4)}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" name="amount" placeholder="0.00" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description (Optional)</label>
+                        <input type="text" name="description" placeholder="e.g., Rent payment">
+                    </div>
+                    <input type="hidden" name="from_account_id" value="${fromAccountId}">
+                </form>
+            `;
+
+            const footer = `
+                <button class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.submitTransfer()">Transfer</button>
+            `;
+
+            this.openModal('Transfer Money', content, footer);
+        } catch (error) {
+            this.showToast('Failed to load accounts', 'error');
+        }
+    }
+
+    async submitTransfer() {
+        const form = document.getElementById('transfer-modal-form');
+        const formData = new FormData(form);
+
+        try {
+            await this.apiRequest('/transactions/transfer', 'POST', {
+                from_account_id: formData.get('from_account_id'),
+                to_account_id: formData.get('to_account_id'),
+                amount: parseFloat(formData.get('amount')),
+                description: formData.get('description') || 'Transfer'
+            });
+
+            this.closeModal();
+            this.showToast('Transfer completed', 'success');
+            this.loadPage('accounts');
+        } catch (error) {
+            this.showToast(error.message || 'Transfer failed', 'error');
+        }
+    }
+
+    async viewAccountDetails(accountId) {
+        try {
+            const result = await this.apiRequest(`/accounts/details?id=${accountId}`, 'GET');
+            const account = result.data.account;
+
+            // Get recent transactions for this account
+            const txResult = await this.apiRequest(`/transactions?account_id=${accountId}&limit=5`, 'GET');
+            const transactions = txResult.data.transactions;
+
+            const content = `
+                <div class="account-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Account Number</span>
+                        <span class="detail-value">${account.account_number}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Type</span>
+                        <span class="detail-value">${account.type.charAt(0).toUpperCase() + account.type.slice(1)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Currency</span>
+                        <span class="detail-value">${account.currency}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value"><span class="badge badge-${account.status === 'active' ? 'success' : 'secondary'}">${account.status}</span></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Current Balance</span>
+                        <span class="detail-value" style="font-size: 1.25rem; font-weight: 600;">${this.formatCurrency(account.balance)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Opened</span>
+                        <span class="detail-value">${this.formatDate(account.opened_at)}</span>
+                    </div>
+                    
+                    <h4 style="margin-top: 1.5rem; margin-bottom: 1rem;">Recent Transactions</h4>
+                    ${transactions.length > 0 ? `
+                        <div class="table-container">
+                            <table class="table">
+                                <tbody>
+                                    ${transactions.map(tx => `
+                                        <tr>
+                                            <td>${this.formatDate(tx.created_at)}</td>
+                                            <td>${tx.description || tx.type}</td>
+                                            <td class="amount ${this.getAmountClass(tx.type)}">${this.getAmountPrefix(tx.type)}${this.formatCurrency(tx.amount)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : '<p class="text-muted">No recent transactions</p>'}
+                </div>
+            `;
+
+            const footer = `
+                <button class="btn btn-secondary" onclick="app.closeModal()">Close</button>
+                <button class="btn btn-primary" onclick="app.deposit('${accountId}')">Deposit</button>
+            `;
+
+            this.openModal('Account Details', content, footer);
+        } catch (error) {
+            this.showToast('Failed to load account details', 'error');
+        }
+    }
+
+    async makeLoanPayment(loanId) {
+        try {
+            const accountsResult = await this.apiRequest('/accounts', 'GET');
+            const accounts = accountsResult.data.accounts.filter(a => a.balance > 0);
+
+            const content = `
+                <form id="loan-payment-form">
+                    <div class="form-group">
+                        <label>Payment Amount</label>
+                        <input type="number" name="amount" placeholder="0.00" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>From Account</label>
+                        <select name="account_id" class="form-select" required>
+                            ${accounts.map(acc => `<option value="${acc.id}">${acc.type} - ${this.formatCurrency(acc.balance)}</option>`).join('')}
+                        </select>
+                    </div>
+                    <input type="hidden" name="loan_id" value="${loanId}">
+                </form>
+            `;
+
+            const footer = `
+                <button class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.submitLoanPayment()">Make Payment</button>
+            `;
+
+            this.openModal('Make Loan Payment', content, footer);
+        } catch (error) {
+            this.showToast('Failed to load accounts', 'error');
+        }
+    }
+
+    async submitLoanPayment() {
+        const form = document.getElementById('loan-payment-form');
+        const formData = new FormData(form);
+
+        try {
+            await this.apiRequest('/loans/payment', 'POST', {
+                loan_id: formData.get('loan_id'),
+                amount: parseFloat(formData.get('amount')),
+                account_id: formData.get('account_id')
+            });
+
+            this.closeModal();
+            this.showToast('Payment successful', 'success');
+            this.loadPage('loans');
+        } catch (error) {
+            this.showToast(error.message || 'Payment failed', 'error');
+        }
+    }
+
+    async sellStock(investmentId, symbol, maxQuantity) {
+        try {
+            const accountsResult = await this.apiRequest('/accounts', 'GET');
+            const accounts = accountsResult.data.accounts.filter(a => a.type !== 'credit');
+
+            const content = `
+                <form id="sell-stock-form">
+                    <div class="form-group">
+                        <label>Selling ${symbol}</label>
+                        <input type="number" name="quantity" placeholder="0" min="0.01" max="${maxQuantity}" step="0.01" required>
+                        <small class="help-text">Max available: ${maxQuantity} shares</small>
+                    </div>
+                    <div class="form-group">
+                        <label>To Account</label>
+                        <select name="account_id" class="form-select" required>
+                            ${accounts.map(acc => `<option value="${acc.id}">${acc.type} - ${this.formatCurrency(acc.balance)}</option>`).join('')}
+                        </select>
+                    </div>
+                    <input type="hidden" name="investment_id" value="${investmentId}">
+                </form>
+            `;
+
+            const footer = `
+                <button class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.submitSellStock()">Sell Stock</button>
+            `;
+
+            this.openModal('Sell Stock', content, footer);
+        } catch (error) {
+            this.showToast('Failed to load accounts', 'error');
+        }
+    }
+
+    async submitSellStock() {
+        const form = document.getElementById('sell-stock-form');
+        const formData = new FormData(form);
+
+        try {
+            await this.apiRequest('/investments/sell', 'POST', {
+                investment_id: formData.get('investment_id'),
+                quantity: parseFloat(formData.get('quantity')),
+                account_id: formData.get('account_id')
+            });
+
+            this.closeModal();
+            this.showToast('Stock sold successfully', 'success');
+            this.loadPage('investments');
+        } catch (error) {
+            this.showToast(error.message || 'Failed to sell stock', 'error');
+        }
+    }
+
+    // ==================== CHARTS & REPORTS ====================
+
+    async initializeCharts() {
+        try {
+            // Get data for charts
+            const incomeExpense = await this.apiRequest('/reports/income-expense?months=6', 'GET');
+            const categories = await this.apiRequest('/reports/spending-by-category', 'GET');
+            const balanceHistory = await this.apiRequest('/reports/balance-history?months=6', 'GET');
+
+            // Income vs Expense Chart
+            const ieCtx = document.getElementById('income-expense-chart');
+            if (ieCtx) {
+                new Chart(ieCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: incomeExpense.data.data.map(d => d.month),
+                        datasets: [
+                            {
+                                label: 'Income',
+                                data: incomeExpense.data.data.map(d => d.income),
+                                backgroundColor: '#10b981',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Expenses',
+                                data: incomeExpense.data.data.map(d => d.expenses),
+                                backgroundColor: '#ef4444',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#94a3b8' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#334155' }
+                            },
+                            x: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Category Chart
+            const catCtx = document.getElementById('category-chart');
+            if (catCtx) {
+                new Chart(catCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: categories.data.categories.map(c => c.category),
+                        datasets: [{
+                            data: categories.data.categories.map(c => c.amount),
+                            backgroundColor: [
+                                '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+                                '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#94a3b8' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Balance History Chart
+            const balCtx = document.getElementById('balance-chart');
+            if (balCtx) {
+                new Chart(balCtx, {
+                    type: 'line',
+                    data: {
+                        labels: balanceHistory.data.history.map(h => h.month),
+                        datasets: [{
+                            label: 'Total Balance',
+                            data: balanceHistory.data.history.map(h => h.balance),
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#334155' }
+                            },
+                            x: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load chart data:', error);
+        }
+    }
+
+    // ==================== SETTINGS ====================
+
+    renderNotificationSettings() {
+        const settings = {
+            email_notifications: true,
+            push_notifications: true,
+            transaction_alerts: true,
+            security_alerts: true,
+            monthly_statements: true,
+            marketing_emails: false
+        };
+
+        return Object.entries(settings).map(([key, value]) => `
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h4>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h4>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" name="${key}" ${value ? 'checked' : ''}>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        `).join('');
+    }
+
+    async handleProfileUpdate(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+
+        try {
+            await this.apiRequest('/auth/profile', 'PUT', {
+                firstname: formData.get('firstname'),
+                lastname: formData.get('lastname'),
+                phone: formData.get('phone')
+            });
+
+            // Update local user data
+            this.user.firstname = formData.get('firstname');
+            this.user.lastname = formData.get('lastname');
+            this.user.phone = formData.get('phone');
+            localStorage.setItem('user', JSON.stringify(this.user));
+
+            this.updateUserInfo();
+            this.showToast('Profile updated', 'success');
+        } catch (error) {
+            this.showToast(error.message || 'Failed to update profile', 'error');
+        }
+    }
+
+    async handlePasswordChange(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+
+        if (formData.get('new_password') !== formData.get('confirm_password')) {
+            this.showToast('Passwords do not match', 'error');
+            return;
+        }
+
+        try {
+            await this.apiRequest('/auth/change-password', 'POST', {
+                current_password: formData.get('current_password'),
+                new_password: formData.get('new_password')
+            });
+
+            this.showToast('Password changed successfully', 'success');
+            e.target.reset();
+        } catch (error) {
+            this.showToast(error.message || 'Failed to change password', 'error');
+        }
     }
 }
 
