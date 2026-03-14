@@ -1,12 +1,12 @@
 {
-    "name": "finpro/enterprise-finance",
+    "name": "openwalletlog/enterprise-finance",
     "description": "Open Wallet Log - A comprehensive Progressive Web App for financial management",
     "type": "project",
     "license": "MIT",
     "authors": [
         {
             "name": "Open Wallet Log Team",
-            "email": "support@finpro.com"
+            "email": "support@openwalletlog.com"
         }
     ],
     "require": {
@@ -30,7 +30,7 @@
     },
     "autoload": {
         "psr-4": {
-            "FinPro\\": "api/"
+            "OpenWalletLog\\": "api/"
         }
     },
     "scripts": {

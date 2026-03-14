@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finpro-v1';
+const CACHE_NAME = 'openwalletlog-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -124,7 +124,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // Sync transactions function
 async function syncTransactions() {
-  const db = await openDB('finpro-offline', 1);
+  const db = await openDB('openwalletlog-offline', 1);
   const transactions = await db.getAll('pendingTransactions');
   
   for (const transaction of transactions) {

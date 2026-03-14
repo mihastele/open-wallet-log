@@ -6,7 +6,7 @@
 // Database configuration
 if (!defined('DB_HOST')) {
     define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');
-    define('DB_NAME', $_ENV['DB_NAME'] ?? 'finpro');
+    define('DB_NAME', $_ENV['DB_NAME'] ?? 'openwalletlog');
     define('DB_USER', $_ENV['DB_USER'] ?? 'root');
     define('DB_PASS', $_ENV['DB_PASS'] ?? '');
     define('DB_CHARSET', 'utf8mb4');
@@ -26,7 +26,7 @@ if (!defined('JWT_SECRET')) {
     define('JWT_SECRET', $_ENV['JWT_SECRET'] ?? 'your-secret-key-change-in-production');
     define('JWT_EXPIRES', 86400); // 24 hours
     define('CSRF_TOKEN_NAME', 'csrf_token');
-    define('SESSION_NAME', 'finpro_session');
+    define('SESSION_NAME', 'openwalletlog_session');
 }
 
 // Rate limiting

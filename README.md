@@ -49,12 +49,12 @@ Place all files in your web server document root (e.g., `/var/www/html/` or `C:/
 
 1. Create the database:
 ```sql
-CREATE DATABASE finpro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE openwalletlog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 2. Import the schema:
 ```bash
-mysql -u root -p finpro < database/schema.sql
+mysql -u root -p openwalletlog < database/schema.sql
 ```
 
 Or use phpMyAdmin to import `database/schema.sql`.
@@ -66,7 +66,7 @@ No configuration needed for basic setup - the app uses default values. For produ
 ```bash
 # Database
 export DB_HOST=localhost
-export DB_NAME=finpro
+export DB_NAME=openwalletlog
 export DB_USER=your_db_user
 export DB_PASS=your_db_password
 
@@ -104,7 +104,7 @@ http://localhost/
 ```
 
 Default admin credentials:
-- Email: `admin@finpro.com`
+- Email: `admin@openwalletlog.com`
 - Password: `password`
 
 **IMPORTANT**: Change the admin password immediately after first login!
@@ -217,7 +217,7 @@ composer test
 
 ## Apache Virtual Host Configuration (Production)
 
-Create `/etc/apache2/sites-available/finpro.conf`:
+Create `/etc/apache2/sites-available/openwalletlog.conf`:
 
 ```apache
 <VirtualHost *:80>
@@ -269,7 +269,7 @@ Create `/etc/apache2/sites-available/finpro.conf`:
 
 Enable the site:
 ```bash
-sudo a2ensite finpro.conf
+sudo a2ensite openwalletlog.conf
 sudo systemctl reload apache2
 ```
 
@@ -294,9 +294,9 @@ services:
     image: mysql:5.7
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: finpro
-      MYSQL_USER: finpro
-      MYSQL_PASSWORD: finpro123
+      MYSQL_DATABASE: openwalletlog
+      MYSQL_USER: openwalletlog
+      MYSQL_PASSWORD: openwalletlog123
     volumes:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
       - mysql_data:/var/lib/mysql

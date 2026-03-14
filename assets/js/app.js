@@ -3,7 +3,7 @@
  * PWA with comprehensive financial management features
  */
 
-class FinProApp {
+class OpenWalletLogApp {
     constructor() {
         this.apiUrl = '/api';
         this.token = localStorage.getItem('token');
@@ -1895,4 +1895,4 @@ class FinProApp {
 }
 
 // Initialize app
-const app = new FinProApp();
+const app = new OpenWalletLogApp();

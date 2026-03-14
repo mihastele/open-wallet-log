@@ -1,6 +1,6 @@
 {
   "name": "Open Wallet Log",
-  "short_name": "FinPro",
+  "short_name": "OpenWalletLog",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

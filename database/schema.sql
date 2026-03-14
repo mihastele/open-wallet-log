@@ -2,8 +2,8 @@
 -- Run this SQL to set up the complete database structure
 
 -- Create database
-CREATE DATABASE IF NOT EXISTS finpro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE finpro;
+CREATE DATABASE IF NOT EXISTS openwalletlog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE openwalletlog;
 
 -- Users table
 CREATE TABLE users (
@@ -253,5 +253,5 @@ INSERT INTO stocks (symbol, name, sector, current_price) VALUES
 -- Insert admin user (password: admin123)
 -- IMPORTANT: Change this password in production!
 INSERT INTO users (email, password, firstname, lastname, role, status, email_verified) VALUES
-('admin@finpro.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 'User', 'admin', 'active', 1);
+('admin@openwalletlog.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 'User', 'admin', 'active', 1);
 -- Default password for admin: 'password' - CHANGE THIS!
